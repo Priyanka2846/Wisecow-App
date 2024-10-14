@@ -1,0 +1,52 @@
+import requests
+import concurrent.futures
+
+def check_uptime(url):
+  """Checks the uptime of a given URL.
+
+  Args:
+    url: The URL to check.
+
+  Returns:
+    A string indicating the application's status ('up' or 'down').
+  """
+
+  try:
+    response = requests.get(url, timeout=10)  # Set a 10-second timeout
+    if response.status_code == 200:
+      return "up"
+    else:
+      return f"down (HTTP status code: {response.status_code})"
+  except requests.exceptions.RequestException as e:
+    return f"down (Exception: {e})"
+
+def check_uptimes(urls):
+  """Checks the uptimes of multiple URLs concurrently.
+
+  Args:
+    urls: A list of URLs to check.
+
+  Returns:
+    A dictionary mapping URLs to their statuses.
+  """
+
+  with concurrent.futures.ThreadPoolExecutor() as executor:
+    futures = [executor.submit(check_uptime, url) for url in urls]
+    results = {url: future.result() for url, future in zip(urls, futures)}
+    return results
+
+if __name__ == "__main__":
+  urls = [
+      "https://application1.com",
+      "https://application2.com",
+      # ... more URLs
+  ]
+
+  # Check uptime of a single URL
+  single_url_status = check_uptime(urls[0])
+  print(f"Application {urls[0]} status: {single_url_status}")
+
+  # Check uptimes of multiple URLs concurrently
+  multiple_urls_statuses = check_uptimes(urls)
+  for url, status in multiple_urls_statuses.items():
+    print(f"Application {url}: {status}")
